@@ -11,7 +11,7 @@
 <a name="english"></a>
 ## English
 
-An interactive in-game landscape mask painting tool for **DayZ Buldozer** (DayZ Terrain Builder / Terrain Processor) powered by a DirectX 11 hook and Dear ImGui.
+An interactive in-game landscape mask painting tool for **DayZ Buldozer** (Terrain Builder) powered by a DirectX 11 hook and Dear ImGui.
 
 It allows terrain creators to paint, preview, and edit surface masks in real-time directly on the 3D landscape or via an interactive 2D minimap canvas, without constantly restarting Buldozer or converting textures in external image editors.
 
@@ -59,7 +59,7 @@ It allows terrain creators to paint, preview, and edit surface masks in real-tim
    - `BuldozerInjector.exe`
 
 ### How to Use
-1. Launch **Buldozer** (via Terrain Builder, Terrain Processor, or standalone `DayZDiag_x64.exe`).
+1. Launch **Buldozer** (via Terrain Builder).
 2. Run `BuldozerInjector.exe` as Administrator.
 3. Once injected, the ImGui overlay will appear in Buldozer.
 4. Load your `layers.cfg` and base mask file in the control panel.
@@ -70,7 +70,7 @@ It allows terrain creators to paint, preview, and edit surface masks in real-tim
 <a name="русский"></a>
 ## Русский
 
-Интерактивный инструмент для рисования масок ландшафта в реальном времени внутри **DayZ Buldozer** (DayZ Terrain Builder / Terrain Processor) на базе DirectX 11 хука и Dear ImGui.
+Интерактивный инструмент для рисования масок ландшафта в реальном времени внутри **DayZ Buldozer** (Terrain Builder) на базе DirectX 11 хука и Dear ImGui.
 
 Позволяет картоделам рисовать, предпросматривать и редактировать маски поверхностей прямо на 3D-ландшафте или через интерактивную 2D-миникарту без постоянных перезапусков Бульдозера и ручного пересохранения текстур во внешних графических редакторах.
 
@@ -118,8 +118,8 @@ It allows terrain creators to paint, preview, and edit surface masks in real-tim
    - `BuldozerInjector.exe` — консольный инжектор
 
 ### Инструкция по запуску
-1. Запустите **Buldozer** (из Terrain Builder, Terrain Processor или `DayZDiag_x64.exe`).
+1. Запустите **Buldozer** (из Terrain Builder).
 2. Запустите `BuldozerInjector.exe` от имени администратора.
-3. После инъекции в окне Бульдозера появится меню оверлея.
+3. После инжект в окне Бульдозера появится меню оверлея.
 4. Укажите пути к вашему `layers.cfg` и файлу маски.
 5. Нажмите клавишу `F` для включения режима кисти и начинайте рисовать!
