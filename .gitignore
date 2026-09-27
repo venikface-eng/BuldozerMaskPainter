@@ -1,0 +1,34 @@
+# Build artifacts & output
+build/
+bin/
+out/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.userosv
+*.sln.docstates
+*.opensdf
+*.sdf
+*.cache
+*.VC.db
+*.VC.opendb
+
+# Compiled binaries and debug files
+*.obj
+*.lib
+*.exp
+*.dll
+*.exe
+*.pdb
+*.ilk
+
+# IDE files
+.vscode/
+.idea/
+
+# Windows OS junk
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
