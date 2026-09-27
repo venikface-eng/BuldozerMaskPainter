@@ -64,6 +64,7 @@ It allows terrain creators to paint, preview, and edit surface masks in real-tim
 3. Once injected, the ImGui overlay will appear in Buldozer.
 4. Load your `layers.cfg` and base mask file in the control panel.
 5. Press `F` to enter painting mode and start drawing on the terrain!
+6. Once finished painting, save the mask in the overlay (`Ctrl + S`) and reload / refresh it in Terrain Builder.
 
 ---
 
@@ -120,6 +121,7 @@ It allows terrain creators to paint, preview, and edit surface masks in real-tim
 ### Инструкция по запуску
 1. Запустите **Buldozer** (из Terrain Builder).
 2. Запустите `BuldozerInjector.exe` от имени администратора.
-3. После инжект в окне Бульдозера появится меню оверлея.
+3. После инжекта в окне Бульдозера появится меню оверлея.
 4. Укажите пути к вашему `layers.cfg` и файлу маски.
 5. Нажмите клавишу `F` для включения режима кисти и начинайте рисовать!
+6. После окончания рисования сохраните маску в оверлее (`Ctrl + S` или кнопкой в меню) и обновите её в Terrain Builder.
