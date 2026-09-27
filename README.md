@@ -15,6 +15,9 @@ An interactive in-game landscape mask painting tool for **DayZ Buldozer** (Terra
 
 It allows terrain creators to paint, preview, and edit surface masks in real-time directly on the 3D landscape or via an interactive 2D minimap canvas, without constantly restarting Buldozer or converting textures in external image editors.
 
+### Video Demonstration
+[![Buldozer Landscape Mask Painter Video](https://img.youtube.com/vi/UfE7E2Bt5ls/maxresdefault.jpg)](https://www.youtube.com/watch?v=UfE7E2Bt5ls)
+
 ### Key Features
 - **Real-Time 3D Painting**: Paint surface masks directly onto the 3D terrain mesh under the cursor.
 - **Interactive 2D Mini-Map**: 1:1 pixel inspector with zoom, panning, grid, and direct painting capability.
@@ -74,6 +77,9 @@ It allows terrain creators to paint, preview, and edit surface masks in real-tim
 Интерактивный инструмент для рисования масок ландшафта в реальном времени внутри **DayZ Buldozer** (Terrain Builder) на базе DirectX 11 хука и Dear ImGui.
 
 Позволяет картоделам рисовать, предпросматривать и редактировать маски поверхностей прямо на 3D-ландшафте или через интерактивную 2D-миникарту без постоянных перезапусков Бульдозера и ручного пересохранения текстур во внешних графических редакторах.
+
+### Видео демонстрация работы
+[![Демонстрация работы Buldozer Landscape Mask Painter](https://img.youtube.com/vi/UfE7E2Bt5ls/maxresdefault.jpg)](https://www.youtube.com/watch?v=UfE7E2Bt5ls)
 
 ### Основные возможности
 - **Рисование по 3D-ландшафту**: Нанесение маски непосредственно на геометрию карты под курсором мыши.
