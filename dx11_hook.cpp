@@ -92,7 +92,7 @@ namespace DayZBuldozer
     // Mode 3: Mask Painter Mode (Isolated Tool Mode: No terrain deformation, no object dragging)
     // -----------------------------------------------------------------------------------------
     static void* g_pSelectionTypeStub = nullptr;
-    static uint8_t g_origSelectionTypeBytes[33] = { 0 };
+    static uint8_t g_origSelectionTypeBytes[Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN] = { 0 };
 
     typedef __int64 (__fastcall* tBuldozerStatusBanner)(__int64 a1, __int64 a2, char a3, float *a4, float a5);
     typedef __int64 (__fastcall* tSub_140B87E60)(__int64 a1, __int64 a2);
@@ -104,11 +104,11 @@ namespace DayZBuldozer
     {
         if (!editCursor) return;
 
-        uint8_t currentMode = *reinterpret_cast<uint8_t*>(editCursor + 0x5EC);
+        uint8_t currentMode = *reinterpret_cast<uint8_t*>(editCursor + Offsets::EDITCURSOR_MODE_OFFSET);
         if (currentMode == 1)
         {
             // 1 (Objects Mode) -> 2 (Native Brush Tool)
-            *reinterpret_cast<uint8_t*>(editCursor + 0x5EC) = 2;
+            *reinterpret_cast<uint8_t*>(editCursor + Offsets::EDITCURSOR_MODE_OFFSET) = 2;
             typedef void(__fastcall* tBrushInit)(uintptr_t);
             auto fnBrushInit = reinterpret_cast<tBrushInit>(g_Engine.moduleBase + Offsets::BULDOZER_BRUSH_INIT_RVA);
             if (fnBrushInit) fnBrushInit(editCursor);
@@ -118,13 +118,13 @@ namespace DayZBuldozer
         else if (currentMode == 2)
         {
             // 2 (Native Brush Tool) -> 3 (Mask Painter Mode)
-            *reinterpret_cast<uint8_t*>(editCursor + 0x5EC) = 3;
+            *reinterpret_cast<uint8_t*>(editCursor + Offsets::EDITCURSOR_MODE_OFFSET) = 3;
             DX11Hook::s_maskPaintMode = true;
         }
         else
         {
             // 3 (Mask Painter Mode) or any other -> 1 (Objects Mode)
-            *reinterpret_cast<uint8_t*>(editCursor + 0x5EC) = 1;
+            *reinterpret_cast<uint8_t*>(editCursor + Offsets::EDITCURSOR_MODE_OFFSET) = 1;
             DX11Hook::s_maskPaintMode = false;
         }
     }
@@ -136,7 +136,7 @@ namespace DayZBuldozer
 
         if (targetMode == 2)
         {
-            *reinterpret_cast<uint8_t*>(editCursor + 0x5EC) = 2;
+            *reinterpret_cast<uint8_t*>(editCursor + Offsets::EDITCURSOR_MODE_OFFSET) = 2;
             typedef void(__fastcall* tBrushInit)(uintptr_t);
             auto fnBrushInit = reinterpret_cast<tBrushInit>(g_Engine.moduleBase + Offsets::BULDOZER_BRUSH_INIT_RVA);
             if (fnBrushInit) fnBrushInit(editCursor);
@@ -144,12 +144,12 @@ namespace DayZBuldozer
         }
         else if (targetMode == 3)
         {
-            *reinterpret_cast<uint8_t*>(editCursor + 0x5EC) = 3;
+            *reinterpret_cast<uint8_t*>(editCursor + Offsets::EDITCURSOR_MODE_OFFSET) = 3;
             DX11Hook::s_maskPaintMode = true;
         }
         else
         {
-            *reinterpret_cast<uint8_t*>(editCursor + 0x5EC) = 1;
+            *reinterpret_cast<uint8_t*>(editCursor + Offsets::EDITCURSOR_MODE_OFFSET) = 1;
             DX11Hook::s_maskPaintMode = false;
         }
     }
@@ -180,7 +180,7 @@ namespace DayZBuldozer
         // sub rsp, 28h (4 bytes - 16-byte align stack + shadow space)
         stub[idx++] = 0x48; stub[idx++] = 0x83; stub[idx++] = 0xEC; stub[idx++] = 0x28;
 
-        // mov rcx, rsi (3 bytes - rsi holds editCursor in sub_140B882A0)
+        // mov rcx, rsi (3 bytes - rsi holds editCursor in sub_14078FD90)
         stub[idx++] = 0x48; stub[idx++] = 0x8B; stub[idx++] = 0xCE;
 
         // mov rax, &OnUABuldSelectionType (10 bytes)
@@ -206,13 +206,13 @@ namespace DayZBuldozer
 
         FlushInstructionCache(GetCurrentProcess(), g_pSelectionTypeStub, idx);
 
-        // Patch the 33 bytes at BULDOZER_SELECTION_TYPE_RVA
+        // Patch the bytes at BULDOZER_SELECTION_TYPE_RVA
         DWORD oldProtect;
-        if (VirtualProtect(reinterpret_cast<void*>(patchAddr), 33, PAGE_EXECUTE_READWRITE, &oldProtect))
+        if (VirtualProtect(reinterpret_cast<void*>(patchAddr), Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN, PAGE_EXECUTE_READWRITE, &oldProtect))
         {
-            memcpy(g_origSelectionTypeBytes, reinterpret_cast<void*>(patchAddr), 33);
+            memcpy(g_origSelectionTypeBytes, reinterpret_cast<void*>(patchAddr), Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN);
 
-            uint8_t patch[33];
+            uint8_t patch[Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN];
             // jmp qword ptr [rip + 0] (6 bytes)
             patch[0] = 0xFF;
             patch[1] = 0x25;
@@ -225,12 +225,12 @@ namespace DayZBuldozer
             uint64_t stubAddr64 = reinterpret_cast<uint64_t>(g_pSelectionTypeStub);
             memcpy(&patch[6], &stubAddr64, 8);
 
-            // NOP remaining 19 bytes (0x90)
-            memset(&patch[14], 0x90, 19);
+            // NOP remaining bytes (0x90)
+            memset(&patch[14], 0x90, Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN - 14);
 
-            memcpy(reinterpret_cast<void*>(patchAddr), patch, 33);
-            VirtualProtect(reinterpret_cast<void*>(patchAddr), 33, oldProtect, &oldProtect);
-            FlushInstructionCache(GetCurrentProcess(), reinterpret_cast<void*>(patchAddr), 33);
+            memcpy(reinterpret_cast<void*>(patchAddr), patch, Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN);
+            VirtualProtect(reinterpret_cast<void*>(patchAddr), Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN, oldProtect, &oldProtect);
+            FlushInstructionCache(GetCurrentProcess(), reinterpret_cast<void*>(patchAddr), Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN);
             return true;
         }
 
@@ -243,11 +243,11 @@ namespace DayZBuldozer
         {
             uintptr_t patchAddr = g_Engine.moduleBase + Offsets::BULDOZER_SELECTION_TYPE_RVA;
             DWORD oldProtect;
-            if (VirtualProtect(reinterpret_cast<void*>(patchAddr), 33, PAGE_EXECUTE_READWRITE, &oldProtect))
+            if (VirtualProtect(reinterpret_cast<void*>(patchAddr), Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN, PAGE_EXECUTE_READWRITE, &oldProtect))
             {
-                memcpy(reinterpret_cast<void*>(patchAddr), g_origSelectionTypeBytes, 33);
-                VirtualProtect(reinterpret_cast<void*>(patchAddr), 33, oldProtect, &oldProtect);
-                FlushInstructionCache(GetCurrentProcess(), reinterpret_cast<void*>(patchAddr), 33);
+                memcpy(reinterpret_cast<void*>(patchAddr), g_origSelectionTypeBytes, Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN);
+                VirtualProtect(reinterpret_cast<void*>(patchAddr), Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN, oldProtect, &oldProtect);
+                FlushInstructionCache(GetCurrentProcess(), reinterpret_cast<void*>(patchAddr), Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN);
             }
 
             VirtualFree(g_pSelectionTypeStub, 0, MEM_RELEASE);
@@ -257,7 +257,7 @@ namespace DayZBuldozer
 
     static __int64 __fastcall HookedBuldozerStatusBanner(__int64 a1, __int64 a2, char a3, float *a4, float a5)
     {
-        if (a1 && *reinterpret_cast<uint8_t*>(a1 + 1516) == 3)
+        if (a1 && *reinterpret_cast<uint8_t*>(a1 + Offsets::EDITCURSOR_MODE_OFFSET) == 3)
         {
             unsigned int duration = static_cast<unsigned int>(a5 * 3000.0f);
             uintptr_t notifyTarget = g_Engine.moduleBase + Offsets::BULDOZER_NOTIFY_SINK_RVA;
@@ -294,7 +294,7 @@ namespace DayZBuldozer
 
     static __int64 __fastcall HookedSub_140B87E60(__int64 a1, __int64 a2)
     {
-        if (a1 && *reinterpret_cast<uint8_t*>(a1 + 1516) == 3)
+        if (a1 && *reinterpret_cast<uint8_t*>(a1 + Offsets::EDITCURSOR_MODE_OFFSET) == 3)
         {
             // In Mask Painter mode: do not raycast or highlight objects in Buldozer
             return 0;

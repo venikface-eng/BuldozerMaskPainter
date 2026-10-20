@@ -10,75 +10,80 @@ namespace DayZBuldozer
 {
     // -----------------------------------------------------------------------------------------
     // DayZ Buldozer (DayZDiag_x64.exe) Reverse Engineering Findings
-    // Analyzed via IDA Pro MCP for DayZDiag_x64.exe
+    // Analyzed via IDA Pro MCP for DayZDiag_x64.exe (DayZ 1.30)
     // -----------------------------------------------------------------------------------------
 
     // RVA Offsets (Base = 0x140000000)
     namespace Offsets
     {
         // World / Landscape static pointer
-        // sub_140606D80: mov rcx, cs:qword_14481AA80
-        constexpr uintptr_t WORLD_STATIC_PTR_RVA     = 0x481AA80;
+        // sub_140C26810: mov rcx, cs:qword_141B24F70
+        constexpr uintptr_t WORLD_STATIC_PTR_RVA     = 0x1B24F70;
 
-        // CGame::GetWorld pointer: sub_1405FC630 returns qword_1448170A8
-        constexpr uintptr_t CGAME_WORLD_STATIC_RVA   = 0x48170A8;
+        // CGame::GetWorld pointer: sub_140C1B110 returns qword_141B0FBA8
+        constexpr uintptr_t CGAME_WORLD_STATIC_RVA   = 0x1B0FBA8;
 
         // Engine / Camera root static pointer
-        // sub_1405F9A30: mov rax, cs:qword_144817A10
-        constexpr uintptr_t ENGINE_STATIC_PTR_RVA    = 0x4817A10;
+        // sub_140C17E70: mov rax, cs:qword_141B132F0
+        constexpr uintptr_t ENGINE_STATIC_PTR_RVA    = 0x1B132F0;
 
         // Offset from Engine* to CameraTransform*
-        // sub_1405F9A30: mov rcx, [rax + 118h] (35 * sizeof(uintptr_t))
+        // sub_140C17E70: mov rcx, [rax + 118h] (35 * sizeof(uintptr_t))
         constexpr uintptr_t CAMERA_TRANSFORM_OFFSET  = 0x118;
 
-        // Buldozer EditCursor instance pointer (sub_140C6AF10: qword_144835468)
-        constexpr uintptr_t BULDOZER_EDITCURSOR_RVA            = 0x4835468;
+        // Buldozer EditCursor instance pointer (sub_1406E9C10: qword_141B14420)
+        constexpr uintptr_t BULDOZER_EDITCURSOR_RVA            = 0x1B14420;
+
+        // EditCursor struct member offsets
+        constexpr uintptr_t EDITCURSOR_MODE_OFFSET             = 0x584; // 1412 (1 = Objects, 2 = Brush, 3 = Mask Painter)
+        constexpr uintptr_t EDITCURSOR_SUBMODE_OFFSET          = 0x601; // 1537 (0 = Normal, 1 = Flatten, 2 = Smooth, 3 = Height set)
 
         // Buldozer Selection Type (UABuldSelectionType) toggle logic RVA
-        constexpr uintptr_t BULDOZER_SELECTION_TYPE_RVA        = 0xB89FBA;
-        constexpr uintptr_t BULDOZER_SELECTION_TYPE_RESUME_RVA = 0xB89FDB;
+        constexpr uintptr_t BULDOZER_SELECTION_TYPE_RVA        = 0x791EE4;
+        constexpr uintptr_t BULDOZER_SELECTION_TYPE_RESUME_RVA = 0x791F1E;
+        constexpr size_t    BULDOZER_SELECTION_TYPE_PATCH_LEN  = 26;
 
-        // Buldozer Brush init function (sub_140B87CD0)
-        constexpr uintptr_t BULDOZER_BRUSH_INIT_RVA            = 0xB87CD0;
+        // Buldozer Brush init function (sub_14078F630)
+        constexpr uintptr_t BULDOZER_BRUSH_INIT_RVA            = 0x78F630;
 
-        // Buldozer Status banner function (sub_140B84870)
-        constexpr uintptr_t BULDOZER_STATUS_BANNER_RVA         = 0xB84870;
+        // Buldozer Status banner function (sub_14078AEB0)
+        constexpr uintptr_t BULDOZER_STATUS_BANNER_RVA         = 0x78AEB0;
 
-        // Buldozer Object hover/arrow update function (sub_140B87E60)
-        constexpr uintptr_t BULDOZER_OBJECT_HOVER_RVA          = 0xB87E60;
+        // Buldozer Object hover/arrow update function (sub_14078F920)
+        constexpr uintptr_t BULDOZER_OBJECT_HOVER_RVA          = 0x78F920;
 
-        // Buldozer Notification sink (qword_14481A4F0) & function (sub_140C5B9B0)
-        constexpr uintptr_t BULDOZER_NOTIFY_SINK_RVA           = 0x481A4F0;
-        constexpr uintptr_t BULDOZER_NOTIFY_FUNC_RVA           = 0xC5B9B0;
+        // Buldozer Notification sink (qword_141B27188) & function (sub_140C8C030)
+        constexpr uintptr_t BULDOZER_NOTIFY_SINK_RVA           = 0x1B27188;
+        constexpr uintptr_t BULDOZER_NOTIFY_FUNC_RVA           = 0xC8C030;
 
-        // UIManager static pointer (sub_140614810: qword_141289910)
-        constexpr uintptr_t UIMANAGER_STATIC_RVA               = 0x1289910;
-        constexpr uintptr_t UIMANAGER_MENU_OFFSET              = 144; // 0x90 (sub_1406146C0: GetMenu)
-        constexpr uintptr_t UIMANAGER_DIALOG_OFFSET            = 152; // 0x98 (sub_140614AB0: IsDialogVisible)
+        // UIManager static pointer (sub_140B7A260: qword_144F1CF00)
+        constexpr uintptr_t UIMANAGER_STATIC_RVA               = 0x4F1CF00;
+        constexpr uintptr_t UIMANAGER_MENU_OFFSET              = 144; // 0x90 (sub_140B7A0C0: GetMenu)
+        constexpr uintptr_t UIMANAGER_DIALOG_OFFSET            = 152; // 0x98 (sub_140B7A490: IsDialogVisible)
 
-        // SurfaceY function: float __fastcall sub_140BC2600(Landscape* world, float x, float z, ...)
-        constexpr uintptr_t SURFACEY_FUNC_RVA        = 0xBC2600;
+        // SurfaceY function: float __fastcall sub_14072BEB0(Landscape* world, float x, float z)
+        constexpr uintptr_t SURFACEY_FUNC_RVA        = 0x72BEB0;
 
-        // SurfaceY with Water / Roads: float __fastcall sub_140BC2920(...)
-        constexpr uintptr_t SURFACEY_WATER_RVA       = 0xBC2920;
+        // SurfaceY with Water / Roads: float __fastcall sub_140728940(...)
+        constexpr uintptr_t SURFACEY_WATER_RVA       = 0x728940;
 
-        // SurfaceY script wrapper: double sub_140606D80() -> jmp qword ptr [rax+0E0h]
-        constexpr uintptr_t SURFACEY_WRAPPER_RVA     = 0x606D80;
+        // SurfaceY script wrapper: double sub_140C26810() -> jmp qword ptr [rax+0F0h]
+        constexpr uintptr_t SURFACEY_WRAPPER_RVA     = 0xC26810;
 
-        // Native DayZ Shape API (sub_1401EB860, sub_1401EAA40, sub_14005CBE0)
-        constexpr uintptr_t SHAPE_CREATETRIS_RVA     = 0x1EB860;
-        constexpr uintptr_t SHAPE_CREATELINES_RVA    = 0x1EAA40;
-        constexpr uintptr_t SHAPE_DESTROY_RVA        = 0x5CBE0;
+        // Native DayZ Shape API (sub_140462D10, sub_140461C40, sub_14019C1B0)
+        constexpr uintptr_t SHAPE_CREATETRIS_RVA     = 0x462D10;
+        constexpr uintptr_t SHAPE_CREATELINES_RVA    = 0x461C40;
+        constexpr uintptr_t SHAPE_DESTROY_RVA        = 0x19C1B0;
 
         // TerrainGrid struct offset within World / Landscape instance
-        // sub_140BC2600: v8 = *(_QWORD *)(world + 29784)
-        constexpr uintptr_t TERRAIN_OFFSET_IN_WORLD  = 29784; // 0x7458
+        // sub_14072BEB0: v3 = *(_QWORD *)(world + 30192)
+        constexpr uintptr_t TERRAIN_OFFSET_IN_WORLD  = 30192; // 0x75F0
 
         // Fields inside TerrainGrid
-        constexpr uintptr_t TERRAIN_DIM_OFFSET       = 756;   // 0x2F4 (int32, e.g. 2048)
-        constexpr uintptr_t TERRAIN_CELLSIZE_OFFSET  = 776;   // 0x308 (float, e.g. 7.8125m)
-        constexpr uintptr_t TERRAIN_INVCELL_OFFSET   = 780;   // 0x30C (float, 1.0 / cell_size)
-        constexpr uintptr_t TERRAIN_SIZEMETERS_OFFSET= 784;   // 0x310 (float, total map size in meters)
+        constexpr uintptr_t TERRAIN_DIM_OFFSET       = 644;   // 0x284 (int32, e.g. 2048)
+        constexpr uintptr_t TERRAIN_CELLSIZE_OFFSET  = 664;   // 0x298 (float, e.g. 7.8125m)
+        constexpr uintptr_t TERRAIN_INVCELL_OFFSET   = 696;   // 0x2B8 (float, 1.0 / cell_size)
+        constexpr uintptr_t TERRAIN_SIZEMETERS_OFFSET= 672;   // 0x2A0 (float, total map size in meters)
     }
 
     // DayZ Shape Flags bitmask (matching Enforce Script ShapeFlags)
@@ -100,21 +105,21 @@ namespace DayZBuldozer
     // Pattern Signatures (AOB) for dynamic scanning
     namespace Signatures
     {
-        // sub_140606D80 (SurfaceY script wrapper):
-        // 48 8B 0D ?? ?? ?? ?? 48 85 C9 74 ?? 48 8B 01 48 FF A0 E0 00 00 00
-        inline const char* SIG_SURFACEY_WRAPPER = "48 8B 0D ? ? ? ? 48 85 C9 74 ? 48 8B 01 48 FF A0 E0 00 00 00";
+        // sub_140C26810 (SurfaceY script wrapper):
+        // 48 8B 0D ?? ?? ?? ?? 48 85 C9 74 ?? 48 8B 01 48 FF A0 F0 00 00 00
+        inline const char* SIG_SURFACEY_WRAPPER = "48 8B 0D ? ? ? ? 48 85 C9 74 ? 48 8B 01 48 FF A0 F0 00 00 00";
 
-        // sub_1405F9A30 (GetCurrentCameraPosition):
+        // sub_140C17E70 (GetCurrentCameraPosition):
         // 48 8B 05 ?? ?? ?? ?? 48 8B 88 18 01 00 00 8B 41 2C 89 02 8B 41 30 89 42 04 8B 41 34 89 42 08
         inline const char* SIG_GET_CAM_POS      = "48 8B 05 ? ? ? ? 48 8B 88 18 01 00 00 8B 41 2C 89 02 8B 41 30 89 42 04 8B 41 34 89 42 08";
 
-        // sub_1405F9A00 (GetCurrentCameraDirection):
+        // sub_140C17E40 (GetCurrentCameraDirection):
         // 48 8B 05 ?? ?? ?? ?? 48 8B 88 18 01 00 00 8B 41 20 89 02 8B 41 24 89 42 04 8B 41 28 89 42 08
         inline const char* SIG_GET_CAM_DIR      = "48 8B 05 ? ? ? ? 48 8B 88 18 01 00 00 8B 41 20 89 02 8B 41 24 89 42 04 8B 41 28 89 42 08";
 
-        // sub_140BC2600 (SurfaceY calculation implementation):
-        // 40 53 55 56 57 41 56 48 83 EC 60 ? ? ? ? ? ? ? ? 48 8B ? 48 8B 89 58 74 00 00
-        inline const char* SIG_SURFACEY_IMPL    = "40 53 55 56 57 41 56 48 83 EC 60";
+        // sub_14072BEB0 (SurfaceY calculation implementation):
+        // 4C 8B DC 48 83 EC 68 48 8B 89 F0 75 00 00
+        inline const char* SIG_SURFACEY_IMPL    = "4C 8B DC 48 83 EC 68 48 8B 89 F0 75 00 00";
     }
 
     // 3D Vector with essential math operations
@@ -326,7 +331,7 @@ namespace DayZBuldozer
         {
             uintptr_t cursor = GetEditCursor();
             if (!cursor) return 1;
-            return *reinterpret_cast<uint8_t*>(cursor + 0x5EC);
+            return *reinterpret_cast<uint8_t*>(cursor + Offsets::EDITCURSOR_MODE_OFFSET);
         }
 
         // Returns current Buldozer Brush Sub-Mode (0 = Normal, 1 = Flatten, 2 = Smooth, 3 = Height set)
@@ -334,7 +339,7 @@ namespace DayZBuldozer
         {
             uintptr_t cursor = GetEditCursor();
             if (!cursor) return 0;
-            return *reinterpret_cast<uint8_t*>(cursor + 0x669);
+            return *reinterpret_cast<uint8_t*>(cursor + Offsets::EDITCURSOR_SUBMODE_OFFSET);
         }
 
         // Returns active DayZ UIScriptedMenu pointer (matching native sub_1406146C0 / GetMenu)
@@ -415,14 +420,14 @@ namespace DayZBuldozer
                 return fnSurfaceY(world, x, z, nullptr, nullptr, nullptr);
             }
 
-            // Fallback: world vtable call at [rax + 0xE0]
+            // Fallback: world vtable call at [rax + 0xF0]
             if (world)
             {
                 uintptr_t vtable = *reinterpret_cast<uintptr_t*>(world);
                 if (vtable)
                 {
                     typedef double (__fastcall* tVirtSurfaceY)(uintptr_t w, float x_coord, float z_coord);
-                    auto virtFn = *reinterpret_cast<tVirtSurfaceY*>(vtable + 0xE0);
+                    auto virtFn = *reinterpret_cast<tVirtSurfaceY*>(vtable + 0xF0);
                     if (virtFn)
                         return static_cast<float>(virtFn(world, x, z));
                 }
