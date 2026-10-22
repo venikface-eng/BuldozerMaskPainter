@@ -180,7 +180,7 @@ namespace DayZBuldozer
         // sub rsp, 28h (4 bytes - 16-byte align stack + shadow space)
         stub[idx++] = 0x48; stub[idx++] = 0x83; stub[idx++] = 0xEC; stub[idx++] = 0x28;
 
-        // mov rcx, rsi (3 bytes - rsi holds editCursor in sub_14078FD90)
+        // mov rcx, rsi (3 bytes - rsi holds editCursor in sub_140B882A0)
         stub[idx++] = 0x48; stub[idx++] = 0x8B; stub[idx++] = 0xCE;
 
         // mov rax, &OnUABuldSelectionType (10 bytes)
@@ -226,7 +226,10 @@ namespace DayZBuldozer
             memcpy(&patch[6], &stubAddr64, 8);
 
             // NOP remaining bytes (0x90)
-            memset(&patch[14], 0x90, Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN - 14);
+            if (Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN > 14)
+            {
+                memset(&patch[14], 0x90, Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN - 14);
+            }
 
             memcpy(reinterpret_cast<void*>(patchAddr), patch, Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN);
             VirtualProtect(reinterpret_cast<void*>(patchAddr), Offsets::BULDOZER_SELECTION_TYPE_PATCH_LEN, oldProtect, &oldProtect);
@@ -661,6 +664,58 @@ namespace DayZBuldozer
                     drawList->AddCircleFilled(centerSp, 3.5f, brushOutlineColor);
                 }
 
+                // 2.5. Draw 512x512 Tile Boundary on 3D Landscape
+                if (g_MaskPainter.m_showTile3DBorder && g_MaskPainter.IsLoaded())
+                {
+                    int tileSize = g_MaskPainter.m_tileSize;
+                    if (tileSize <= 0) tileSize = 512;
+                    int curTileX = static_cast<int>(std::floor(hitPoint.x)) / tileSize;
+                    int curTileZ = static_cast<int>(std::floor(hitPoint.z)) / tileSize;
+
+                    TileMaterialInfo curTileInfo = g_MaskPainter.GetTileInfo(curTileX, curTileZ, tileSize, g_MaskPainter.m_maxAllowedMaterials);
+
+                    ImU32 tileEdgeCol = curTileInfo.hasWarning ? IM_COL32(255, 40, 40, 240) : IM_COL32(0, 220, 255, 200);
+                    float tileEdgeThickness = curTileInfo.hasWarning ? 3.0f : 1.8f;
+
+                    float tileMinX = static_cast<float>(curTileX * tileSize);
+                    float tileMaxX = tileMinX + static_cast<float>(tileSize);
+                    float tileMinZ = static_cast<float>(curTileZ * tileSize);
+                    float tileMaxZ = tileMinZ + static_cast<float>(tileSize);
+
+                    auto DrawTerrainEdge = [&](float x1, float z1, float x2, float z2) {
+                        float dist = std::hypot(x2 - x1, z2 - z1);
+                        int steps = std::max(4, static_cast<int>(dist / 16.0f));
+                        ImVec2 prevSp;
+                        bool hasPrev = false;
+                        for (int s = 0; s <= steps; ++s)
+                        {
+                            float t = static_cast<float>(s) / static_cast<float>(steps);
+                            float px = x1 + (x2 - x1) * t;
+                            float pz = z1 + (z2 - z1) * t;
+                            float py = g_Engine.GetSurfaceHeight(px, pz) + 0.1f;
+                            ImVec2 sp;
+                            if (ProjectToScreen(Vector3(px, py, pz), screenW, screenH, sp))
+                            {
+                                if (hasPrev)
+                                {
+                                    drawList->AddLine(prevSp, sp, tileEdgeCol, tileEdgeThickness);
+                                }
+                                prevSp = sp;
+                                hasPrev = true;
+                            }
+                            else
+                            {
+                                hasPrev = false;
+                            }
+                        }
+                    };
+
+                    DrawTerrainEdge(tileMinX, tileMinZ, tileMaxX, tileMinZ);
+                    DrawTerrainEdge(tileMaxX, tileMinZ, tileMaxX, tileMaxZ);
+                    DrawTerrainEdge(tileMaxX, tileMaxZ, tileMinX, tileMaxZ);
+                    DrawTerrainEdge(tileMinX, tileMaxZ, tileMinX, tileMinZ);
+                }
+
                 // 3. Painting Trigger (Paints onto Overlay Layer in Mask Painting Mode)
                 bool isMouseDown = isWindowFocused && ((GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0);
                 ImGuiIO& io = ImGui::GetIO();
@@ -932,9 +987,110 @@ namespace DayZBuldozer
                 }
 
                 // ---------------------------------------------------------------------------------
-                // SECTION 3: 3D TERRAIN SURFACE VISUALIZATION
+                // SECTION 3: 512x512 TILE INSPECTOR & ENGINE LIMITS
                 // ---------------------------------------------------------------------------------
-                if (ImGui::CollapsingHeader("3. 3D Terrain Surface Visualization", ImGuiTreeNodeFlags_DefaultOpen))
+                if (ImGui::CollapsingHeader("3. 512x512 Tile Inspector & Engine Limits", ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    ImGui::InputInt("Tile Size [meters / px]", &g_MaskPainter.m_tileSize);
+                    if (g_MaskPainter.m_tileSize < 64) g_MaskPainter.m_tileSize = 64;
+                    if (g_MaskPainter.m_tileSize > 4096) g_MaskPainter.m_tileSize = 4096;
+
+                    ImGui::SliderInt("Max Materials Per Tile", &g_MaskPainter.m_maxAllowedMaterials, 1, 8);
+                    ImGui::TextDisabled("DayZ terrain engine limit is 4 materials per tile! Exceeding causes pale white artifacts.");
+
+                    ImGui::Checkbox("Show 512m Tile Grid on Mini-Map", &g_MaskPainter.m_showTileGrid);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("Show Tile Badges", &g_MaskPainter.m_showTileCounts);
+                    ImGui::Checkbox("Show 512m Tile Border on 3D Terrain", &g_MaskPainter.m_showTile3DBorder);
+
+                    if (g_MaskPainter.IsLoaded())
+                    {
+                        // Current Tile under cursor info
+                        TileMaterialInfo curT = g_MaskPainter.GetTileInfoAtWorld(hitPoint.x, hitPoint.z, mapSizeMeters, g_MaskPainter.m_tileSize, g_MaskPainter.m_maxAllowedMaterials);
+
+                        std::string curLayersList = "";
+                        for (size_t li = 0; li < curT.layerIndices.size(); ++li)
+                        {
+                            TerrainLayer tl = g_MaskPainter.GetPaletteLayer(curT.layerIndices[li]);
+                            if (li > 0) curLayersList += ", ";
+                            curLayersList += tl.name;
+                        }
+
+                        ImGui::Separator();
+                        ImGui::Text("Current Tile at Cursor: [%d, %d]", curT.tileX, curT.tileZ);
+                        if (curT.hasWarning)
+                        {
+                            ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f),
+                                "⚠️ Materials in Tile: %d / %d (EXCEEDS ENGINE LIMIT!)", curT.materialCount, g_MaskPainter.m_maxAllowedMaterials);
+                            ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.6f, 1.0f), "   Surfaces: [%s]", curLayersList.c_str());
+                        }
+                        else
+                        {
+                            ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f),
+                                "✅ Materials in Tile: %d / %d (OK)", curT.materialCount, g_MaskPainter.m_maxAllowedMaterials);
+                            ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "   Surfaces: [%s]", curLayersList.c_str());
+                        }
+
+                        // Full map scan tool
+                        static TileScanSummary s_scanSummary;
+                        static bool s_hasScanned = false;
+
+                        ImGui::Separator();
+                        if (ImGui::Button("🔍 Scan All Map Tiles for > 4 Material Violations"))
+                        {
+                            s_scanSummary = g_MaskPainter.ScanAllTiles(g_MaskPainter.m_tileSize, g_MaskPainter.m_maxAllowedMaterials);
+                            s_hasScanned = true;
+                        }
+
+                        if (s_hasScanned)
+                        {
+                            if (s_scanSummary.violatingCount == 0)
+                            {
+                                ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f),
+                                    "🎉 All %d tiles are clean! No tiles exceed %d materials.", s_scanSummary.totalTiles, g_MaskPainter.m_maxAllowedMaterials);
+                            }
+                            else
+                            {
+                                ImGui::TextColored(ImVec4(1.0f, 0.25f, 0.25f, 1.0f),
+                                    "⚠️ Found %d / %d tiles exceeding %d materials limit:",
+                                    s_scanSummary.violatingCount, s_scanSummary.totalTiles, g_MaskPainter.m_maxAllowedMaterials);
+
+                                ImGui::BeginChild("ViolatingTilesList", ImVec2(0, 150), true);
+                                for (size_t vi = 0; vi < s_scanSummary.violatingTiles.size(); ++vi)
+                                {
+                                    const auto& vt = s_scanSummary.violatingTiles[vi];
+                                    ImGui::PushID(static_cast<int>(vi));
+                                    ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f),
+                                        "Tile [%d, %d]: %d mats", vt.tileX, vt.tileZ, vt.materialCount);
+                                    ImGui::SameLine();
+                                    if (ImGui::SmallButton("View on Map"))
+                                    {
+                                        g_minimapFollowBrush = false;
+                                        g_minimapFollowCamera = false;
+                                        g_minimapCenterX = static_cast<float>(vt.tileX * g_MaskPainter.m_tileSize + g_MaskPainter.m_tileSize / 2);
+                                        g_minimapCenterZ = static_cast<float>(vt.tileZ * g_MaskPainter.m_tileSize + g_MaskPainter.m_tileSize / 2);
+                                        DX11Hook::s_showMinimap = true;
+                                    }
+                                    std::string vtLayers = "";
+                                    for (size_t li = 0; li < vt.layerIndices.size(); ++li)
+                                    {
+                                        TerrainLayer tl = g_MaskPainter.GetPaletteLayer(vt.layerIndices[li]);
+                                        if (li > 0) vtLayers += ", ";
+                                        vtLayers += tl.name;
+                                    }
+                                    ImGui::TextDisabled("  [%s]", vtLayers.c_str());
+                                    ImGui::PopID();
+                                }
+                                ImGui::EndChild();
+                            }
+                        }
+                    }
+                }
+
+                // ---------------------------------------------------------------------------------
+                // SECTION 4: 3D TERRAIN SURFACE VISUALIZATION
+                // ---------------------------------------------------------------------------------
+                if (ImGui::CollapsingHeader("4. 3D Terrain Surface Visualization", ImGuiTreeNodeFlags_DefaultOpen))
                 {
                     ImGui::Checkbox("Render 1:1 Meter Pixel Quads on 3D Surface", &g_MaskPainter.m_showPixelQuadsOnTerrain);
                     ImGui::Checkbox("Show 1x1m Pixel Grid Lines", &g_MaskPainter.m_showPixelGridLines);
@@ -943,9 +1099,9 @@ namespace DayZBuldozer
                 }
 
                 // ---------------------------------------------------------------------------------
-                // SECTION 4: BRUSH SETTINGS & HOTKEYS
+                // SECTION 5: BRUSH SETTINGS & HOTKEYS
                 // ---------------------------------------------------------------------------------
-                if (ImGui::CollapsingHeader("4. Brush & Controls", ImGuiTreeNodeFlags_DefaultOpen))
+                if (ImGui::CollapsingHeader("5. Brush & Controls", ImGuiTreeNodeFlags_DefaultOpen))
                 {
                     ImGui::SliderInt("Brush Radius [m / px]", &g_MaskPainter.m_brushRadiusPx, 1, 128);
 
@@ -980,7 +1136,7 @@ namespace DayZBuldozer
                 // ---------------------------------------------------------------------------------
                 // SECTION 5: WORLD & MAP SETTINGS
                 // ---------------------------------------------------------------------------------
-                if (ImGui::CollapsingHeader("5. World & Map Settings"))
+                if (ImGui::CollapsingHeader("6. World & Map Settings"))
                 {
                     ImGui::Checkbox("Auto-Detect Terrain Size from Buldozer", &DX11Hook::s_useAutoMapSize);
                     if (!DX11Hook::s_useAutoMapSize)
@@ -1024,6 +1180,8 @@ namespace DayZBuldozer
                 ImGui::Checkbox("Follow Cam", &g_minimapFollowCamera);
                 ImGui::SameLine();
                 ImGui::Checkbox("1x1m Grid", &g_minimapShowGrid);
+                ImGui::SameLine();
+                ImGui::Checkbox("512m Tiles", &g_MaskPainter.m_showTileGrid);
                 ImGui::SameLine();
                 if (ImGui::Button("Center"))
                 {
@@ -1159,6 +1317,87 @@ namespace DayZBuldozer
                     }
                 }
 
+                // 512x512 Tile Grid & Material Counters on Mini-Map
+                if (g_MaskPainter.m_showTileGrid && g_MaskPainter.IsLoaded())
+                {
+                    int tileSize = g_MaskPainter.m_tileSize;
+                    if (tileSize <= 0) tileSize = 512;
+                    int maxAllowed = g_MaskPainter.m_maxAllowedMaterials;
+
+                    float minVisX = g_minimapCenterX - halfDim / g_minimapZoom;
+                    float maxVisX = g_minimapCenterX + halfDim / g_minimapZoom;
+                    float minVisZ = g_minimapCenterZ - halfDim / g_minimapZoom;
+                    float maxVisZ = g_minimapCenterZ + halfDim / g_minimapZoom;
+
+                    int maxTilesX = (g_MaskPainter.GetWidth() + tileSize - 1) / tileSize;
+                    int maxTilesZ = (g_MaskPainter.GetHeight() + tileSize - 1) / tileSize;
+
+                    int startTileX = std::max(0, static_cast<int>(std::floor(minVisX / static_cast<float>(tileSize))));
+                    int endTileX = std::min(maxTilesX - 1, static_cast<int>(std::floor(maxVisX / static_cast<float>(tileSize))));
+                    int startTileZ = std::max(0, static_cast<int>(std::floor(minVisZ / static_cast<float>(tileSize))));
+                    int endTileZ = std::min(maxTilesZ - 1, static_cast<int>(std::floor(maxVisZ / static_cast<float>(tileSize))));
+
+                    for (int tz = startTileZ; tz <= endTileZ; ++tz)
+                    {
+                        for (int tx = startTileX; tx <= endTileX; ++tx)
+                        {
+                            float wx0 = static_cast<float>(tx * tileSize);
+                            float wx1 = wx0 + static_cast<float>(tileSize);
+                            float wz0 = static_cast<float>(tz * tileSize);
+                            float wz1 = wz0 + static_cast<float>(tileSize);
+
+                            ImVec2 pTL = WorldToCanvas(wx0, wz1);
+                            ImVec2 pBR = WorldToCanvas(wx1, wz0);
+
+                            float boxX0 = std::max(canvasPos.x, pTL.x);
+                            float boxY0 = std::max(canvasPos.y, pTL.y);
+                            float boxX1 = std::min(canvasPos.x + canvasSize, pBR.x);
+                            float boxY1 = std::min(canvasPos.y + canvasSize, pBR.y);
+
+                            if (boxX1 <= boxX0 || boxY1 <= boxY0) continue;
+
+                            TileMaterialInfo tInfo = g_MaskPainter.GetTileInfo(tx, tz, tileSize, maxAllowed);
+
+                            if (tInfo.hasWarning)
+                            {
+                                drawList->AddRectFilled(ImVec2(boxX0, boxY0), ImVec2(boxX1, boxY1), IM_COL32(255, 30, 30, 45));
+                            }
+
+                            ImU32 borderCol = tInfo.hasWarning ? IM_COL32(255, 50, 50, 240) : IM_COL32(0, 220, 255, 180);
+                            float borderThick = tInfo.hasWarning ? 2.5f : 1.5f;
+
+                            if (pTL.x >= canvasPos.x && pTL.x <= canvasPos.x + canvasSize)
+                                drawList->AddLine(ImVec2(pTL.x, boxY0), ImVec2(pTL.x, boxY1), borderCol, borderThick);
+                            if (pBR.x >= canvasPos.x && pBR.x <= canvasPos.x + canvasSize)
+                                drawList->AddLine(ImVec2(pBR.x, boxY0), ImVec2(pBR.x, boxY1), borderCol, borderThick);
+                            if (pTL.y >= canvasPos.y && pTL.y <= canvasPos.y + canvasSize)
+                                drawList->AddLine(ImVec2(boxX0, pTL.y), ImVec2(boxX1, pTL.y), borderCol, borderThick);
+                            if (pBR.y >= canvasPos.y && pBR.y <= canvasPos.y + canvasSize)
+                                drawList->AddLine(ImVec2(boxX0, pBR.y), ImVec2(boxX1, pBR.y), borderCol, borderThick);
+
+                            if (g_MaskPainter.m_showTileCounts)
+                            {
+                                char bText[96];
+                                if (tInfo.hasWarning)
+                                    snprintf(bText, sizeof(bText), "⚠️ [%d, %d]: %d mats (>%d!)", tx, tz, tInfo.materialCount, maxAllowed);
+                                else
+                                    snprintf(bText, sizeof(bText), "[%d, %d]: %d/%d mats", tx, tz, tInfo.materialCount, maxAllowed);
+
+                                ImVec2 bTextSz = ImGui::CalcTextSize(bText);
+                                float badgeX = std::clamp(pTL.x + 6.0f, canvasPos.x + 4.0f, canvasPos.x + canvasSize - bTextSz.x - 12.0f);
+                                float badgeY = std::clamp(pTL.y + 6.0f, canvasPos.y + 4.0f, canvasPos.y + canvasSize - bTextSz.y - 8.0f);
+
+                                ImVec2 bMin(badgeX, badgeY);
+                                ImVec2 bMax(badgeX + bTextSz.x + 6.0f, badgeY + bTextSz.y + 4.0f);
+
+                                drawList->AddRectFilled(bMin, bMax, tInfo.hasWarning ? IM_COL32(180, 20, 20, 220) : IM_COL32(15, 25, 35, 200), 3.0f);
+                                drawList->AddRect(bMin, bMax, borderCol, 3.0f, 0, 1.0f);
+                                drawList->AddText(ImVec2(bMin.x + 3.0f, bMin.y + 2.0f), IM_COL32(255, 255, 255, 255), bText);
+                            }
+                        }
+                    }
+                }
+
                 // Brush footprint on mini-map
                 if (hasHitTerrain)
                 {
@@ -1229,6 +1468,36 @@ namespace DayZBuldozer
                                    mouseWorld.x, mouseWorld.z, hoverCellX, hoverCellZ,
                                    hoverLayer.name.c_str(), hasOver ? "OVERLAY" : "BASE",
                                    hoverLayer.r, hoverLayer.g, hoverLayer.b);
+
+                if (g_MaskPainter.IsLoaded())
+                {
+                    int curTileSize = g_MaskPainter.m_tileSize;
+                    if (curTileSize <= 0) curTileSize = 512;
+                    TileMaterialInfo cursorTileInfo = g_MaskPainter.GetTileInfoAtWorld(mouseWorld.x, mouseWorld.z, mapSizeMeters, curTileSize, g_MaskPainter.m_maxAllowedMaterials);
+
+                    std::string tileLayersList = "";
+                    for (size_t li = 0; li < cursorTileInfo.layerIndices.size(); ++li)
+                    {
+                        TerrainLayer tl = g_MaskPainter.GetPaletteLayer(cursorTileInfo.layerIndices[li]);
+                        if (li > 0) tileLayersList += ", ";
+                        tileLayersList += tl.name;
+                    }
+
+                    if (cursorTileInfo.hasWarning)
+                    {
+                        ImGui::TextColored(ImVec4(1.0f, 0.25f, 0.25f, 1.0f),
+                            "⚠️ TILE [%d, %d] (%dm): %d MATERIALS (LIMIT > %d!) -> Will cause pale white blending artifacts in DayZ!",
+                            cursorTileInfo.tileX, cursorTileInfo.tileZ, curTileSize, cursorTileInfo.materialCount, g_MaskPainter.m_maxAllowedMaterials);
+                        ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.6f, 1.0f), "   Surfaces in tile: [%s]", tileLayersList.c_str());
+                    }
+                    else
+                    {
+                        ImGui::TextColored(ImVec4(0.4f, 0.85f, 1.0f, 1.0f),
+                            "📦 Tile [%d, %d] (%dm): %d / %d materials (OK) | Surfaces: [%s]",
+                            cursorTileInfo.tileX, cursorTileInfo.tileZ, curTileSize, cursorTileInfo.materialCount, g_MaskPainter.m_maxAllowedMaterials,
+                            tileLayersList.c_str());
+                    }
+                }
             }
             ImGui::End();
         }

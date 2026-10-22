@@ -17,66 +17,66 @@ namespace DayZBuldozer
     namespace Offsets
     {
         // World / Landscape static pointer
-        // sub_140C26810: mov rcx, cs:qword_141B24F70
-        constexpr uintptr_t WORLD_STATIC_PTR_RVA     = 0x1B24F70;
+        // sub_140C30A60: mov rcx, cs:qword_141B361A0
+        constexpr uintptr_t WORLD_STATIC_PTR_RVA     = 0x1B361A0;
 
-        // CGame::GetWorld pointer: sub_140C1B110 returns qword_141B0FBA8
-        constexpr uintptr_t CGAME_WORLD_STATIC_RVA   = 0x1B0FBA8;
+        // CGame::GetWorld pointer: sub_140C25340 returns qword_141B20DD0
+        constexpr uintptr_t CGAME_WORLD_STATIC_RVA   = 0x1B20DD0;
 
         // Engine / Camera root static pointer
-        // sub_140C17E70: mov rax, cs:qword_141B132F0
-        constexpr uintptr_t ENGINE_STATIC_PTR_RVA    = 0x1B132F0;
+        // sub_140C220A0: mov rax, cs:qword_141B24520
+        constexpr uintptr_t ENGINE_STATIC_PTR_RVA    = 0x1B24520;
 
         // Offset from Engine* to CameraTransform*
-        // sub_140C17E70: mov rcx, [rax + 118h] (35 * sizeof(uintptr_t))
+        // sub_140C220A0: mov rcx, [rax + 118h] (35 * sizeof(uintptr_t))
         constexpr uintptr_t CAMERA_TRANSFORM_OFFSET  = 0x118;
 
-        // Buldozer EditCursor instance pointer (sub_1406E9C10: qword_141B14420)
-        constexpr uintptr_t BULDOZER_EDITCURSOR_RVA            = 0x1B14420;
+        // Buldozer EditCursor instance pointer (sub_1406F3630: qword_141B25650)
+        constexpr uintptr_t BULDOZER_EDITCURSOR_RVA            = 0x1B25650;
 
         // EditCursor struct member offsets
         constexpr uintptr_t EDITCURSOR_MODE_OFFSET             = 0x584; // 1412 (1 = Objects, 2 = Brush, 3 = Mask Painter)
         constexpr uintptr_t EDITCURSOR_SUBMODE_OFFSET          = 0x601; // 1537 (0 = Normal, 1 = Flatten, 2 = Smooth, 3 = Height set)
 
         // Buldozer Selection Type (UABuldSelectionType) toggle logic RVA
-        constexpr uintptr_t BULDOZER_SELECTION_TYPE_RVA        = 0x791EE4;
-        constexpr uintptr_t BULDOZER_SELECTION_TYPE_RESUME_RVA = 0x791F1E;
+        constexpr uintptr_t BULDOZER_SELECTION_TYPE_RVA        = 0x79BC04;
+        constexpr uintptr_t BULDOZER_SELECTION_TYPE_RESUME_RVA = 0x79BC3E;
         constexpr size_t    BULDOZER_SELECTION_TYPE_PATCH_LEN  = 26;
 
-        // Buldozer Brush init function (sub_14078F630)
-        constexpr uintptr_t BULDOZER_BRUSH_INIT_RVA            = 0x78F630;
+        // Buldozer Brush init function (sub_140799350)
+        constexpr uintptr_t BULDOZER_BRUSH_INIT_RVA            = 0x799350;
 
-        // Buldozer Status banner function (sub_14078AEB0)
-        constexpr uintptr_t BULDOZER_STATUS_BANNER_RVA         = 0x78AEB0;
+        // Buldozer Status banner function (sub_140794BD0)
+        constexpr uintptr_t BULDOZER_STATUS_BANNER_RVA         = 0x794BD0;
 
-        // Buldozer Object hover/arrow update function (sub_14078F920)
-        constexpr uintptr_t BULDOZER_OBJECT_HOVER_RVA          = 0x78F920;
+        // Buldozer Object hover/arrow update function (sub_140799640)
+        constexpr uintptr_t BULDOZER_OBJECT_HOVER_RVA          = 0x799640;
 
-        // Buldozer Notification sink (qword_141B27188) & function (sub_140C8C030)
-        constexpr uintptr_t BULDOZER_NOTIFY_SINK_RVA           = 0x1B27188;
-        constexpr uintptr_t BULDOZER_NOTIFY_FUNC_RVA           = 0xC8C030;
+        // Buldozer Notification sink (qword_141B383C8) & function (sub_140C96290)
+        constexpr uintptr_t BULDOZER_NOTIFY_SINK_RVA           = 0x1B383C8;
+        constexpr uintptr_t BULDOZER_NOTIFY_FUNC_RVA           = 0xC96290;
 
-        // UIManager static pointer (sub_140B7A260: qword_144F1CF00)
-        constexpr uintptr_t UIMANAGER_STATIC_RVA               = 0x4F1CF00;
-        constexpr uintptr_t UIMANAGER_MENU_OFFSET              = 144; // 0x90 (sub_140B7A0C0: GetMenu)
-        constexpr uintptr_t UIMANAGER_DIALOG_OFFSET            = 152; // 0x98 (sub_140B7A490: IsDialogVisible)
+        // UIManager static pointer (sub_140B83B40: qword_144F2E130)
+        constexpr uintptr_t UIMANAGER_STATIC_RVA               = 0x4F2E130;
+        constexpr uintptr_t UIMANAGER_MENU_OFFSET              = 144; // 0x90 (sub_140B84130: GetMenu)
+        constexpr uintptr_t UIMANAGER_DIALOG_OFFSET            = 152; // 0x98 (sub_140B84500: IsDialogVisible)
 
-        // SurfaceY function: float __fastcall sub_14072BEB0(Landscape* world, float x, float z)
-        constexpr uintptr_t SURFACEY_FUNC_RVA        = 0x72BEB0;
+        // SurfaceY function: float __fastcall sub_140735910(Landscape* world, float x, float z)
+        constexpr uintptr_t SURFACEY_FUNC_RVA        = 0x735910;
 
-        // SurfaceY with Water / Roads: float __fastcall sub_140728940(...)
-        constexpr uintptr_t SURFACEY_WATER_RVA       = 0x728940;
+        // SurfaceY with Water / Roads: float __fastcall sub_140731D80(...)
+        constexpr uintptr_t SURFACEY_WATER_RVA       = 0x731D80;
 
-        // SurfaceY script wrapper: double sub_140C26810() -> jmp qword ptr [rax+0F0h]
-        constexpr uintptr_t SURFACEY_WRAPPER_RVA     = 0xC26810;
+        // SurfaceY script wrapper: double sub_140C30A60() -> jmp qword ptr [rax+0F0h]
+        constexpr uintptr_t SURFACEY_WRAPPER_RVA     = 0xC30A60;
 
-        // Native DayZ Shape API (sub_140462D10, sub_140461C40, sub_14019C1B0)
-        constexpr uintptr_t SHAPE_CREATETRIS_RVA     = 0x462D10;
-        constexpr uintptr_t SHAPE_CREATELINES_RVA    = 0x461C40;
-        constexpr uintptr_t SHAPE_DESTROY_RVA        = 0x19C1B0;
+        // Native DayZ Shape API (sub_140468B40, sub_140467A70, sub_14019C280)
+        constexpr uintptr_t SHAPE_CREATETRIS_RVA     = 0x468B40;
+        constexpr uintptr_t SHAPE_CREATELINES_RVA    = 0x467A70;
+        constexpr uintptr_t SHAPE_DESTROY_RVA        = 0x19C280;
 
         // TerrainGrid struct offset within World / Landscape instance
-        // sub_14072BEB0: v3 = *(_QWORD *)(world + 30192)
+        // sub_140735B00: v3 = *(_QWORD *)(world + 30192)
         constexpr uintptr_t TERRAIN_OFFSET_IN_WORLD  = 30192; // 0x75F0
 
         // Fields inside TerrainGrid
